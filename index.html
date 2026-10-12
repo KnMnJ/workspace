@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전문가용 북마크 워크스페이스</title>
+    <style>
+        :root {
+            --bg-color: #0f1115;
+            --panel-bg: rgba(30, 34, 45, 0.7);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-hover: rgba(255, 255, 255, 0.1);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-gradient: linear-gradient(135deg, #00c6fb 0%, #005bea 100%);
+            --text-main: #ffffff;
+            --text-sub: #94a3b8;
+            --accent-soft: rgba(0, 198, 251, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard', 'Segoe UI', sans-serif;
+            background: var(--bg-color);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(0, 91, 234, 0.15) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 198, 251, 0.15) 0%, transparent 20%);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 상단 헤더 */
+        .header {
+            background: rgba(15, 17, 21, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            /* 좌 / 중 / 우 */
+            align-items: center;
+            position: relative;
+        }
+
+        .header-center {
+            display: flex;
+            justify-content: center;
+            /* ⭐ 정중앙 */
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+
+        .manage-group {
+            /* Removed absolute positioning for stability */
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 20;
+            justify-self: end;
+            /* Grid alignment */
+        }
+
+        .btn-manage {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-sub);
+            border: 1px solid var(--border-color);
+            padding: 0 14px;
+            height: 30px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-manage:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border-color: rgba(0, 198, 251, 0.35);
+        }
+
+        /* 텍스트: 네온 그라데이션 (정제 버전) */
+        .logo-text {
+            font-size: 20px;
+            font-weight: 850;
+            letter-spacing: -0.6px;
+            background: linear-gradient(135deg,
+                    #7dd3fc 0%,
+                    #00c6fb 45%,
+                    #005bea 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            /* 번쩍임 방지용 */
+            filter: drop-shadow(0 4px 14px rgba(0, 198, 251, 0.18));
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            width: 60%;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 5px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        input[type="text"] {
+            padding: 10px 16px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 14px;
+            transition: all 0.2s;
+            border-radius: 8px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        #siteName {
+            flex: 1;
+            border-radius: 8px 0 0 8px;
+        }
+
+        #siteUrl {
+            flex: 2;
+            border-left: 1px solid var(--border-color);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .btn-add {
+            background: transparent;
+            color: #7dd3fc;
+            border: 1px solid rgba(125, 211, 252, 0.35);
+            padding: 0 22px;
+            height: 38px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-add:hover {
+            background: linear-gradient(135deg,
+                    rgba(0, 198, 251, 0.25),
+                    rgba(0, 91, 234, 0.25));
+            color: white;
+            border-color: rgba(125, 211, 252, 0.7);
+            box-shadow: 0 6px 18px rgba(0, 198, 251, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .input-group:focus-within .btn-add {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(125, 211, 252, 0.5);
+        }
+
+        /* 메인 레이아웃 (3단) */
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 25px;
+            gap: 25px;
+            overflow: hidden;
+        }
+
+        /* 공통 영역 스타일 */
+        .zone {
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: border-color 0.2s;
+        }
+
+        .zone-header {
+            padding: 18px 24px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            color: var(--text-sub);
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header-title {
+            cursor: pointer;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-title:hover {
+            color: #00c6fb;
+        }
+
+        .header-title::after {
+            content: '🔍';
+            font-size: 12px;
+            opacity: 0;
+            transform: translateX(-5px);
+            transition: all 0.2s;
+        }
+
+        .header-title:hover::after {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .search-container {
+            padding: 0 15px;
+            height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+
+        .search-container.active {
+            height: 50px;
+            opacity: 1;
+            padding: 10px 15px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: white;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #00c6fb;
+        }
+
+        .zone-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .zone.drag-over {
+            border-color: #00c6fb;
+            background: rgba(0, 198, 251, 0.05);
+        }
+
+        .zone.duplicate {
+            box-shadow: 0 0 0 2px rgba(255, 99, 99, 0.6);
+        }
+
+        /* 1. 메인 영역 */
+        .main-zone {
+            flex: 1;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            /* Responsive Grid */
+            grid-auto-rows: minmax(70px, auto);
+            gap: 20px;
+            align-content: start;
+        }
+
+        /* 메인 카드 스타일 */
+        .main-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            user-select: none;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-height: 70px;
+            color: var(--text-main);
+        }
+
+        .main-card:hover {
+            transform: translateY(-4px);
+            background: var(--card-hover);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .main-card.selected {
+            border: 1px solid #00c6fb;
+            background: rgba(0, 198, 251, 0.1);
+            box-shadow: 0 0 0 1px rgba(0, 198, 251, 0.3), 0 8px 15px rgba(0, 198, 251, 0.2);
+        }
+
+        .main-card-name {
+            font-size: 15px;
+            font-weight: 500;
+            word-break: keep-all;
+            line-height: 1.3;
+        }
+
+        /* 사이드바 */
+        .dict-zone {
+            width: 260px;
+            flex-shrink: 0;
+        }
+
+        .dict-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* 사전 아이템 스타일 */
+        .dict-item {
+            background: transparent;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--text-sub);
+        }
+
+        .dict-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .dict-item.selected {
+            background: rgba(0, 198, 251, 0.1);
+            border: 1px solid rgba(0, 198, 251, 0.3);
+            font-weight: 600;
+        }
+
+        /* 드래그 선택 시 강제 호버 효과 */
+        .main-card.forced-hover {
+            transform: translateY(-4px);
+            background: var(--card-hover);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .dict-item.forced-hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .dict-icon {
+            font-size: 14px;
+            opacity: 0.5;
+        }
+
+        /* 스크롤바 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .empty-placeholder {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.2);
+            margin-top: 60px;
+            font-size: 13px;
+            pointer-events: none;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .selection-box {
+            position: absolute;
+            background: rgba(0, 198, 251, 0.1);
+            border: 1px solid rgba(0, 198, 251, 0.5);
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+            border-radius: 4px;
+        }
+
+        /* 드롭 위치 표시 바 */
+        .drop-bar {
+            position: fixed;
+            width: 4px;
+            border-radius: 2px;
+            background: linear-gradient(180deg, #7dd3fc, #005bea);
+            box-shadow: 0 0 12px rgba(0, 198, 251, 0.8);
+            pointer-events: none;
+            z-index: 9998;
+            display: none;
+        }
+
+        /* 로그인 전에는 워크스페이스 전체 숨김 */
+        body.locked .header,
+        body.locked .workspace {
+            display: none;
+        }
+
+        /* 로그인 오버레이 */
+        #loginOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: var(--bg-color);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #loginOverlay.show {
+            display: flex;
+        }
+
+        .login-box {
+            width: 340px;
+            padding: 36px 32px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            text-align: center;
+        }
+
+        .login-box input {
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .login-box input:focus {
+            border-color: #00c6fb;
+        }
+
+        .login-box .btn-add {
+            justify-content: center;
+            height: 42px;
+        }
+
+        #loginMsg {
+            font-size: 12px;
+            color: #ff8a8a;
+            min-height: 16px;
+        }
+
+        .login-hint {
+            font-size: 11px;
+            color: var(--text-sub);
+        }
+    </style>
+</head>
+
+<body class="locked">
+    <!-- 로그인 -->
+    <div id="loginOverlay">
+        <form class="login-box" onsubmit="submitLogin(event)">
+            <span class="logo-text" style="font-size:26px">WORKSPACE</span>
+            <input type="text" id="loginUser" placeholder="사용자 이름" autocomplete="username">
+            <input type="password" id="loginPass" placeholder="비밀번호" autocomplete="current-password">
+            <button class="btn-add" type="submit">ENTER</button>
+            <div id="loginMsg"></div>
+            <div class="login-hint">처음 입력하는 이름이면 새 계정이 만들어집니다.</div>
+        </form>
+    </div>
+
+    <!-- 상단 헤더 -->
+    <header class="header">
+        <div class="brand">
+            <span class="logo-text">WORKSPACE</span>
+        </div>
+
+        <!-- ⭐ 중앙 영역 -->
+        <div class="header-center">
+            <div class="input-group" id="addSiteZone">
+                <input type="text" id="siteName" placeholder="사이트 이름">
+                <input type="text" id="siteUrl" placeholder="URL 추가">
+                <button class="btn-add" onclick="addNewSite()">ADD</button>
+            </div>
+        </div>
+
+        <!-- 우측 상단 관리 버튼 -->
+        <div class="manage-group">
+            <button class="btn-manage" onclick="exportData()">EXPORT</button>
+            <button class="btn-manage" onclick="importData()">IMPORT</button>
+            <button class="btn-manage" onclick="logout()">LOGOUT</button>
+        </div>
+    </header>
+
+    <!-- 3단 워크스페이스 영역 -->
+    <div class="workspace">
+        <!-- 1. 왼쪽 사전 -->
+        <aside class="zone dict-zone" id="dictLeft" ondragover="allowDrop(event)"
+            ondrop="handleDrop(event, 'dictLeft')">
+            <div class="zone-header">
+                <span class="header-title" onclick="toggleSearch('dictLeft')">법인</span>
+                <small id="count-dictLeft">0</small>
+            </div>
+            <div class="search-container" id="search-dictLeft">
+                <input type="text" class="search-input" placeholder="Search..."
+                    oninput="handleSearch('dictLeft', this.value)">
+            </div>
+            <div class="zone-content dict-list" id="list-dictLeft">
+                <!-- 사전 아이템들이 들어올 곳 -->
+            </div>
+        </aside>
+
+        <!-- 2. 중앙 메인 (작업 공간) -->
+        <main class="zone main-zone" id="mainZone" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'main')">
+            <div class="zone-header">
+                <span>Main Desk</span>
+                <small id="count-main">0</small>
+            </div>
+            <div class="zone-content main-grid" id="list-main">
+                <!-- 메인 카드들이 들어올 곳 -->
+            </div>
+        </main>
+
+        <!-- 3. 오른쪽 사전 -->
+        <aside class="zone dict-zone" id="dictRight" ondragover="allowDrop(event)"
+            ondrop="handleDrop(event, 'dictRight')">
+            <div class="zone-header">
+                <span class="header-title" onclick="toggleSearch('dictRight')">개인</span>
+                <small id="count-dictRight">0</small>
+            </div>
+            <div class="search-container" id="search-dictRight">
+                <input type="text" class="search-input" placeholder="Search..."
+                    oninput="handleSearch('dictRight', this.value)">
+            </div>
+            <div class="zone-content dict-list" id="list-dictRight">
+                <!-- 사전 아이템들이 들어올 곳 -->
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // 데이터 상태 관리
+        let data = {
+            main: [],
+            dictLeft: [],
+            dictRight: []
+        };
+
+        // 선택 관련 변수
+        let selectedItem = null;
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            setupInputs();
+            setupDeleteKey();
+            startAuth();
+        });
+
+        // ===== 인증 & 서버 동기화 =====
+        let auth = null; // { username, password }
+
+        async function api(action, extra = {}) {
+            const r = await fetch('/api/data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, username: auth.username, password: auth.password, ...extra })
+            });
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) {
+                const err = new Error(j.error || `서버 오류 (HTTP ${r.status})`);
+                err.status = r.status;
+                throw err;
+            }
+            return j;
+        }
+
+        function showLogin(msg = '') {
+            document.getElementById('loginMsg').textContent = msg;
+            document.getElementById('loginOverlay').classList.add('show');
+            document.getElementById('loginUser').focus();
+        }
+
+        function startAuth() {
+            try { auth = JSON.parse(localStorage.getItem('wsAuth')); } catch { auth = null; }
+            if (auth && auth.username && auth.password) {
+                loadData();
+            } else {
+                auth = null;
+                showLogin();
+            }
+        }
+
+        async function submitLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUser').value.trim();
+            const password = document.getElementById('loginPass').value;
+            if (!username || !password) {
+                document.getElementById('loginMsg').textContent = '이름과 비밀번호를 입력하세요.';
+                return;
+            }
+            auth = { username, password };
+            document.getElementById('loginMsg').textContent = '확인 중...';
+            await loadData(true);
+        }
+
+        function logout() {
+            if (!confirm('로그아웃 하시겠습니까?')) return;
+            localStorage.removeItem('wsAuth');
+            localStorage.removeItem('workspaceData');
+            location.reload();
+        }
+
+        function localLegacyData() {
+            // 기존 브라우저에 저장돼 있던 데이터 (최초 로그인 시 서버로 이전)
+            try {
+                const saved = localStorage.getItem('workspaceData');
+                if (saved) return JSON.parse(saved);
+                const old = JSON.parse(localStorage.getItem('workSites'));
+                if (Array.isArray(old)) return { main: old, dictLeft: [], dictRight: [] };
+            } catch { }
+            return null;
+        }
+
+        async function loadData(fromLogin = false) {
+            try {
+                const res = await api('load');
+                if (res.data) {
+                    data = res.data;
+                } else {
+                    // 새 계정: 기존 로컬 데이터가 있으면 서버로 이전
+                    const legacy = localLegacyData();
+                    if (legacy) {
+                        data = {
+                            main: legacy.main || [],
+                            dictLeft: legacy.dictLeft || [],
+                            dictRight: legacy.dictRight || []
+                        };
+                        await api('save', { data });
+                    }
+                }
+                localStorage.setItem('wsAuth', JSON.stringify(auth));
+                localStorage.setItem('workspaceData', JSON.stringify(data));
+                document.getElementById('loginOverlay').classList.remove('show');
+                document.body.classList.remove('locked');
+                renderAll();
+            } catch (e) {
+                if (e.status === 401) {
+                    localStorage.removeItem('wsAuth');
+                    showLogin(e.message || '로그인 실패');
+                } else if (!fromLogin && localLegacyData()) {
+                    // 서버 연결 실패 시 마지막 캐시로 표시
+                    data = localLegacyData();
+                    document.body.classList.remove('locked');
+                    renderAll();
+                } else {
+                    showLogin('서버 연결 실패: ' + e.message);
+                }
+            }
+        }
+
+        let saveTimer = null;
+        function pushToServer() {
+            if (!auth) return;
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(async () => {
+                try {
+                    await api('save', { data });
+                } catch (e) {
+                    console.error('서버 저장 실패', e);
+                    if (e.status === 401) showLogin('인증이 만료되었습니다. 다시 로그인하세요.');
+                }
+            }, 400);
+        }
+
+        function saveData(render = true) {
+            localStorage.setItem('workspaceData', JSON.stringify(data));
+            pushToServer();
+            if (render) renderAll();
+        }
+
+        // 입력 및 엔터키 설정
+        function setupInputs() {
+            const nameInput = document.getElementById('siteName');
+            const urlInput = document.getElementById('siteUrl');
+
+            nameInput.addEventListener('keydown', (e) => {
+                // URL이 입력되어 있는 상태에서 이름 입력창에서 엔터 -> 바로 추가
+                if (e.key === 'Enter') {
+                    if (urlInput.value.trim()) {
+                        addNewSite();
+                    } else {
+                        urlInput.focus();
+                    }
+                }
+            });
+
+            urlInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') addNewSite();
+            });
+
+            // ⚡ URL 붙여넣기 감지 및 자동 파싱
+            urlInput.addEventListener('input', (e) => {
+                const val = e.target.value;
+                if (!val) return;
+
+                const rawName = extractCompanyName(val);
+                if (rawName) {
+                    const cleanName = cleanCompanyName(rawName);
+                    nameInput.value = cleanName + ' ';
+                    nameInput.focus();
+                }
+            });
+
+            // 단축키: Ctrl + A -> 입력창 포커스
+            document.addEventListener('keydown', e => {
+                // Ctrl + A
+                if (e.ctrlKey && e.key.toLowerCase() === 'a') {
+                    const active = document.activeElement.tagName;
+                    if (active !== 'INPUT' && active !== 'TEXTAREA') {
+                        e.preventDefault();
+                        document.getElementById('siteName').focus();
+                    }
+                }
+
+                // Escape
+                if (e.key === 'Escape') {
+                    ['dictLeft', 'dictRight'].forEach(type => {
+                        const c = document.getElementById(`search-${type}`);
+                        if (c.classList.contains('active')) {
+                            c.classList.remove('active');
+                            handleSearch(type, '');
+                        }
+                    });
+                }
+            });
+        }
+
+        // Delete 키 설정
+        function setupDeleteKey() {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Delete' && selectedItem) {
+                    processDelete();
+                }
+            });
+        }
+
+        // 사이트 추가
+        function addNewSite() {
+            const nameInput = document.getElementById('siteName');
+            const urlInput = document.getElementById('siteUrl');
+
+            const name = nameInput.value.trim();
+            let url = urlInput.value.trim();
+
+            if (!name || !url) {
+                alert('이름과 URL을 모두 입력해주세요.');
+                return;
+            }
+
+            if (!url.startsWith('http')) url = 'https://' + url;
+
+            const normalizedNewUrl = normalizeUrl(url);
+
+            // 🔒 중복 검사 (main + 사전 전체)
+            const isDuplicate = ['main', 'dictLeft', 'dictRight']
+                .some(type => hasDuplicateInTarget(type, normalizedNewUrl));
+
+            if (isDuplicate) {
+                alert('이미 등록된 사이트입니다.');
+                return;
+            }
+
+            const newItem = {
+                id: crypto.randomUUID(),
+                name: name,
+                url: url
+            };
+
+            data.main.push(newItem);
+
+            nameInput.value = '';
+            urlInput.value = '';
+            nameInput.focus();
+
+            saveData();
+        }
+
+        // URL 정규화 함수
+        function normalizeUrl(url) {
+            try {
+                const u = new URL(url);
+                // 1. 프로토콜 무시 (http, https 차이 무시)
+                // 2. www. 무시 (www.example.com == example.com)
+                const host = u.hostname.replace(/^www\./, '');
+                // 3. 말단 슬래시 무시
+                const path = u.pathname.replace(/\/$/, '');
+
+                // host + path + search + hash 조합 (protocol 제외)
+                return host + path + u.search + u.hash;
+            } catch {
+                return url.replace(/\/$/, '');
+            }
+        }
+
+        function hasDuplicateInTarget(targetType, url) {
+            const targetList = typeToData(targetType);
+            const normalized = normalizeUrl(url);
+
+            return targetList.some(item =>
+                normalizeUrl(item.url) === normalized
+            );
+        }
+
+        // 🔍 검색 상태
+        let searchState = { dictLeft: '', dictRight: '' };
+
+        // 렌더링
+        function renderAll() {
+            renderZone('main', data.main);
+            renderZone('dictLeft', data.dictLeft);
+            renderZone('dictRight', data.dictRight);
+
+            document.getElementById('count-main').textContent = data.main.length;
+            document.getElementById('count-dictLeft').textContent = data.dictLeft.length;
+            document.getElementById('count-dictRight').textContent = data.dictRight.length;
+        }
+
+        function renderZone(type, items) {
+            const container = document.getElementById(`list-${type}`);
+            container.innerHTML = '';
+
+            let displayItems = [...items];
+
+            // 1. 필터링 (사전 영역)
+            if (type !== 'main') {
+                const query = searchState[type] ? searchState[type].toLowerCase() : '';
+
+                if (query) {
+                    displayItems = displayItems.filter(item =>
+                        item.name.toLowerCase().includes(query) ||
+                        item.url.toLowerCase().includes(query)
+                    );
+                }
+
+                // 2. 스마트 정렬
+                displayItems.sort((a, b) => {
+                    if (!query) return a.name.localeCompare(b.name);
+
+                    const aName = a.name.toLowerCase();
+                    const bName = b.name.toLowerCase();
+
+                    if (aName === query && bName !== query) return -1;
+                    if (bName === query && aName !== query) return 1;
+
+                    const aStart = aName.startsWith(query);
+                    const bStart = bName.startsWith(query);
+                    if (aStart && !bStart) return -1;
+                    if (!aStart && bStart) return 1;
+
+                    return aName.localeCompare(bName);
+                });
+            }
+
+            if (displayItems.length === 0) {
+                const msg = (type !== 'main' && searchState[type]) ? 'NO RESULT' : 'EMPTY';
+                container.innerHTML = `<div class="empty-placeholder">${msg}</div>`;
+                return;
+            }
+
+            displayItems.forEach((item) => {
+                // 원본 인덱스 찾기 (데이터 조작용)
+                const realIndex = items.findIndex(x => x.id === item.id);
+
+                const el = document.createElement('div');
+
+                if (type === 'main') {
+                    el.className = 'main-card';
+                    el.innerHTML = `<div class="main-card-name">${escapeHtml(item.name)}</div>`;
+                } else {
+                    el.className = 'dict-item';
+                    el.innerHTML = `<span class="dict-icon">#</span> ${escapeHtml(item.name)}`;
+                }
+
+                el.draggable = true;
+                el.dataset.type = type;
+                el.dataset.index = realIndex; // 중요: 원본 인덱스 사용
+                el.dataset.id = item.id;
+                el.dataset.url = item.url;
+                el.title = item.url;
+
+                el.addEventListener('dragstart', handleDragStart);
+
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectItem(el, type, realIndex);
+                });
+
+                el.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    window.open(item.url, '_blank');
+                });
+
+                container.appendChild(el);
+            });
+        }
+
+        // 검색 기능 헬퍼
+        function toggleSearch(type) {
+            const container = document.getElementById(`search-${type}`);
+            const input = container.querySelector('input');
+
+            container.classList.toggle('active');
+            if (container.classList.contains('active')) {
+                setTimeout(() => input.focus(), 300);
+            } else {
+                input.value = '';
+                handleSearch(type, '');
+            }
+        }
+
+        function handleSearch(type, value) {
+            searchState[type] = value;
+            renderZone(type, data[type]);
+        }
+
+        function selectItem(el, type, index) {
+            if (selectedItem && selectedItem.el) {
+                selectedItem.el.classList.remove('selected');
+            }
+
+            el.classList.add('selected');
+            selectedItem = { el, type, index, id: el.dataset.id };
+        }
+
+        // 드래그 앤 드롭
+        let draggedItem = null;
+
+        function handleDragStart(e) {
+            // Ctrl 키가 눌려있으면 네이티브 드래그 시작 안 함 (다중 선택 모드 위해)
+            if (e.ctrlKey) {
+                e.preventDefault();
+                return;
+            }
+
+            draggedItem = {
+                type: this.dataset.type,
+                index: parseInt(this.dataset.index),
+                id: this.dataset.id,
+                data: typeToData(this.dataset.type)[this.dataset.index]
+            };
+            e.dataTransfer.effectAllowed = 'copyMove';
+        }
+
+        // 📍 메인 데스크 삽입 위치 표시 바
+        let mainDropIndex = null;
+        const dropBar = document.createElement('div');
+        dropBar.className = 'drop-bar';
+        document.body.appendChild(dropBar);
+
+        function updateDropBar(e) {
+            const cards = [...document.querySelectorAll('#list-main .main-card')];
+            if (cards.length === 0) {
+                mainDropIndex = 0;
+                dropBar.style.display = 'none';
+                return;
+            }
+
+            // 커서에서 가장 가까운 카드 찾기 (같은 행 우선)
+            let best = null, bestDist = Infinity;
+            cards.forEach(card => {
+                const r = card.getBoundingClientRect();
+                const dy = (e.clientY >= r.top && e.clientY <= r.bottom) ? 0 : Math.min(Math.abs(e.clientY - r.top), Math.abs(e.clientY - r.bottom));
+                const dx = (e.clientX >= r.left && e.clientX <= r.right) ? 0 : Math.min(Math.abs(e.clientX - r.left), Math.abs(e.clientX - r.right));
+                const dist = dy * 1000 + dx;
+                if (dist < bestDist) { bestDist = dist; best = card; }
+            });
+
+            const r = best.getBoundingClientRect();
+            const idx = parseInt(best.dataset.index);
+            const after = e.clientX > r.left + r.width / 2;
+
+            mainDropIndex = after ? idx + 1 : idx;
+
+            dropBar.style.display = 'block';
+            dropBar.style.left = (after ? r.right + 8 : r.left - 12) + 'px';
+            dropBar.style.top = r.top + 'px';
+            dropBar.style.height = r.height + 'px';
+        }
+
+        function allowDrop(e) {
+            e.preventDefault();
+            clearAllDragOver();
+            const zone = e.currentTarget;
+            zone.classList.add('drag-over');
+            if (zone.id === 'mainZone' && draggedItem) updateDropBar(e);
+        }
+
+        function clearAllDragOver() {
+            dropBar.style.display = 'none';
+            document.querySelectorAll('.zone.drag-over').forEach(zone => {
+                zone.classList.remove('drag-over');
+            });
+        }
+
+        function flashZone(targetType) {
+            const zone = document.getElementById(
+                targetType === 'main' ? 'mainZone' : targetType
+            );
+            if (!zone) return;
+
+            zone.classList.add('duplicate');
+            setTimeout(() => zone.classList.remove('duplicate'), 500);
+        }
+
+        function handleDrop(e, targetType) {
+            e.preventDefault();
+            clearAllDragOver();
+
+            if (!draggedItem) return;
+
+            const sourceType = draggedItem.type;
+            const sourceList = typeToData(sourceType);
+            const targetList = typeToData(targetType);
+            const itemData = draggedItem.data;
+
+            let dropIndex = targetList.length;
+
+            const zone = e.currentTarget;
+            const targetCard = e.target.closest('.main-card, .dict-item');
+
+            if (targetType === 'main' && mainDropIndex !== null) {
+                dropIndex = mainDropIndex;
+            } else if (targetCard && zone.contains(targetCard)) {
+                dropIndex = parseInt(targetCard.dataset.index);
+            }
+            mainDropIndex = null;
+
+            // 🔒 중복 방지: 모든 이동/복사에 대해 목적지에 중복 체크
+            if (sourceType !== targetType) {
+                if (hasDuplicateInTarget(targetType, itemData.url)) {
+                    flashZone(targetType);
+                    draggedItem = null;
+                    return;
+                }
+            }
+
+            // 1. 같은 영역 (순서 변경)
+            if (sourceType === targetType) {
+                if (sourceType === 'main') {
+                    const oldIndex = draggedItem.index;
+                    let newIndex = dropIndex;
+
+                    if (oldIndex < newIndex) {
+                        newIndex--;
+                    }
+
+                    const movedItem = sourceList.splice(oldIndex, 1)[0];
+                    sourceList.splice(newIndex, 0, movedItem);
+                }
+                else {
+                    return;
+                }
+            }
+            // 2. 사전 -> 메인 (복사)
+            else if (sourceType.startsWith('dict') && targetType === 'main') {
+                targetList.splice(dropIndex, 0, { ...itemData });
+            }
+            // 3. 메인 -> 사전 (이동)
+            else if (sourceType === 'main' && targetType.startsWith('dict')) {
+                sourceList.splice(draggedItem.index, 1);
+                targetList.push(itemData);
+            }
+            // 4. 사전 <-> 사전 (이동)
+            else if (sourceType.startsWith('dict') && targetType.startsWith('dict')) {
+                sourceList.splice(draggedItem.index, 1);
+                targetList.push(itemData);
+            }
+
+            saveData();
+            draggedItem = null;
+        }
+
+        function processDelete() {
+            if (!selectedItem) return;
+
+            const { type, index, id } = selectedItem;
+            const list = typeToData(type);
+
+            // 바로 삭제 (확인 창 제거)
+            if (type === 'main') {
+                list.splice(index, 1);
+            } else {
+                const realIndex = list.findIndex(x => x.id == id);
+                if (realIndex > -1) list.splice(realIndex, 1);
+                data.main = data.main.filter(item => item.id != id);
+            }
+
+            saveData();
+            selectedItem = null;
+        }
+
+        function typeToData(type) {
+            if (type === 'main') return data.main;
+            if (type === 'dictLeft') return data.dictLeft;
+            if (type === 'dictRight') return data.dictRight;
+            return [];
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.addEventListener('dragend', clearAllDragOver);
+        document.addEventListener('drop', clearAllDragOver);
+        document.addEventListener('mouseup', clearAllDragOver);
+
+        document.addEventListener('click', () => {
+            if (selectedItem && selectedItem.el) {
+                selectedItem.el.classList.remove('selected');
+                selectedItem = null;
+            }
+        });
+
+        // 🖱️ 다중 선택 & 열기 (Ctrl + Drag)
+        let isSelecting = false;
+        let startPageX = 0, startPageY = 0;
+
+        const selectionBox = document.createElement('div');
+        selectionBox.className = 'selection-box';
+        document.body.appendChild(selectionBox);
+
+        document.addEventListener('mousedown', (e) => {
+            // Ctrl 키 + 좌클릭
+            if (e.ctrlKey && e.button === 0) {
+                if (e.target.tagName === 'INPUT') return;
+
+                isSelecting = true;
+                startPageX = e.pageX;
+                startPageY = e.pageY;
+
+                selectionBox.style.left = startPageX + 'px';
+                selectionBox.style.top = startPageY + 'px';
+                selectionBox.style.width = '0px';
+                selectionBox.style.height = '0px';
+                selectionBox.style.display = 'block';
+
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isSelecting) return;
+
+            const currentX = e.pageX;
+            const currentY = e.pageY;
+
+            const width = Math.abs(currentX - startPageX);
+            const height = Math.abs(currentY - startPageY);
+            const left = Math.min(currentX, startPageX);
+            const top = Math.min(currentY, startPageY);
+
+            selectionBox.style.width = width + 'px';
+            selectionBox.style.height = height + 'px';
+            selectionBox.style.left = left + 'px';
+            selectionBox.style.top = top + 'px';
+
+            // 실시간 하이라이트
+            const boxRect = selectionBox.getBoundingClientRect();
+            const items = document.querySelectorAll('.main-card, .dict-item');
+
+            items.forEach(item => {
+                if (item.offsetParent === null) return; // 숨겨진 아이템 제외
+
+                const itemRect = item.getBoundingClientRect();
+                const overlap = !(boxRect.right < itemRect.left ||
+                    boxRect.left > itemRect.right ||
+                    boxRect.bottom < itemRect.top ||
+                    boxRect.top > itemRect.bottom);
+
+                if (overlap) {
+                    item.classList.add('forced-hover');
+                } else {
+                    item.classList.remove('forced-hover');
+                }
+            });
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!isSelecting) return;
+            isSelecting = false;
+
+            selectionBox.style.display = 'none';
+            selectionBox.style.width = '0';
+
+            // 선택된 아이템 확인 (forced-hover 클래스가 있는 것들)
+            const items = document.querySelectorAll('.main-card, .dict-item');
+            const selectedItems = [];
+
+            items.forEach(item => {
+                if (item.classList.contains('forced-hover')) {
+                    selectedItems.push(item);
+                    item.classList.remove('forced-hover'); // 즉시 스타일 제거
+                }
+            });
+
+            // 드래그가 너무 작으면(단순 클릭) 무시
+            const boxRect = selectionBox.getBoundingClientRect();
+            // 주의: display:none 직후라 rect가 0일 수 있음. 
+            // 하지만 selectedItems가 존재하면 의도된 드래그로 간주 가능.
+            // 또는 mousemove에서 overlap 체크했으므로 selectedItems 유무로 판단.
+
+            if (selectedItems.length > 0) {
+                const targets = selectedItems.filter(item => item.title);
+                if (targets.length > 0) {
+                    if (confirm(`${targets.length}개의 사이트를 새 탭으로 여시겠습니까?`)) {
+                        let count = 0;
+                        targets.forEach(item => {
+                            window.open(item.title, '_blank');
+                            count++;
+                        });
+                        console.log(`${count} sites opened.`);
+                    }
+                }
+            }
+        });
+
+        function exportData() {
+            const payload = {
+                version: "1.0.0",
+                updatedAt: new Date().toISOString(),
+                data: data
+            };
+
+            const blob = new Blob(
+                [JSON.stringify(payload, null, 2)],
+                { type: "application/json" }
+            );
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+
+            const date = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `workspace-backup-${date}.json`;
+
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importData() {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = "application/json";
+
+            input.onchange = () => {
+                const file = input.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        const imported = JSON.parse(reader.result);
+
+                        let restoredData = null;
+                        let versionInfo = "legacy";
+
+                        // ✅ 1. 새 백업 포맷 (version + data)
+                        if (imported.data && imported.version) {
+                            restoredData = imported.data;
+                            versionInfo = imported.version;
+                        }
+                        // ✅ 2. 옛 백업 포맷 (바로 data 구조)
+                        else if (
+                            imported.main &&
+                            imported.dictLeft &&
+                            imported.dictRight
+                        ) {
+                            restoredData = imported;
+                        }
+
+                        if (!restoredData) {
+                            alert("지원하지 않는 백업 파일 형식입니다.");
+                            return;
+                        }
+
+                        if (!confirm("현재 데이터를 덮어쓰시겠습니까?")) return;
+
+                        data = {
+                            main: restoredData.main || [],
+                            dictLeft: restoredData.dictLeft || [],
+                            dictRight: restoredData.dictRight || []
+                        };
+                        saveData();
+
+                        alert(`복원이 완료되었습니다.\n백업 버전: ${versionInfo}`);
+                    } catch (e) {
+                        alert("JSON 파일을 읽을 수 없습니다.");
+                    }
+                };
+
+                reader.readAsText(file);
+            };
+
+            input.click();
+        }
+
+        function extractCompanyName(url) {
+            try {
+                // 1. Try standard URL parsing
+                const u = new URL(url);
+                let params;
+
+                // Prioritize params in hash (SPA) if present
+                if (u.hash.includes('?')) {
+                    params = new URLSearchParams(u.hash.split('?')[1]);
+                } else {
+                    params = u.searchParams;
+                }
+
+                const raw = params.get('companyName');
+                if (raw) return raw; // No need to decode manually, URLSearchParams does it
+
+            } catch {
+                // 2. Fallback for non-standard URLs or partial strings
+                if (url.includes('?')) {
+                    try {
+                        const lastQuery = url.substring(url.lastIndexOf('?') + 1);
+                        const params = new URLSearchParams(lastQuery);
+                        const raw = params.get('companyName');
+                        if (raw) return raw;
+                    } catch { }
+                }
+            }
+            return null;
+        }
+
+        function cleanCompanyName(name) {
+            return name
+                .replace(/\((주|유|합|재)\)/g, '')
+                .replace(/㈜/g, '')
+                .replace(/주식회사/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        const mainZone = document.getElementById('mainZone');
+        const nameInput = document.getElementById('siteName');
+        const urlInput = document.getElementById('siteUrl');
+        const dropZone = document.getElementById('addSiteZone');
+
+        if (dropZone) {
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+
+                const url =
+                    e.dataTransfer.getData('text/uri-list') ||
+                    e.dataTransfer.getData('text/plain');
+
+                if (!url || !url.startsWith('http')) return;
+
+                urlInput.value = url;
+
+                const rawCompany = extractCompanyName(url);
+                const company = rawCompany ? cleanCompanyName(rawCompany) : '';
+
+                if (company) {
+                    const value = company + ' ';
+                    nameInput.value = value;
+                    nameInput.focus();
+                    nameInput.setSelectionRange(value.length, value.length);
+                } else {
+                    nameInput.focus();
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
